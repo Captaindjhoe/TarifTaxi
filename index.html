@@ -219,7 +219,7 @@
         box-shadow: 0 6px 20px rgba(16,185,129,.6);
     }
 
-    /* Tombol QRIS (Orange/Merah) */
+    /* Tombol QRIS (Orange) */
     .btn-qris {
         background: linear-gradient(135deg, #f97316, #ea580c);
         color: #fff;
@@ -229,6 +229,95 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(249,115,22,.6);
     }
+
+    /* ==========================================
+       CSS UNTUK POP-UP (MODAL) QRIS
+       ========================================== */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: #fff;
+        border-radius: 16px;
+        padding: 20px;
+        width: 100%;
+        max-width: 350px;
+        text-align: center;
+        position: relative;
+        animation: popIn 0.3s ease-out;
+    }
+
+    @keyframes popIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-content h2 {
+        font-size: 18px;
+        color: #1e3c72;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .modal-content p {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 15px;
+    }
+
+    .modal-content img {
+        width: 100%;
+        max-width: 280px;
+        border-radius: 12px;
+        border: 2px solid #e5e7eb;
+        margin-bottom: 15px;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .btn-close-modal {
+        background: #ef4444;
+        color: #fff;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        margin-bottom: 8px;
+    }
+
+    .btn-close-modal:hover { background: #dc2626; }
+
+    .btn-download-qr {
+        background: #3b82f6;
+        color: #fff;
+        padding: 12px;
+        border: none;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        width: 100%;
+        text-decoration: none;
+        display: block;
+    }
+
+    .btn-download-qr:hover { background: #2563eb; }
 
     /* CSS Khusus Cetak Struk */
     @media print {
@@ -298,6 +387,27 @@
     </div>
 </div>
 
+<!-- ==========================================
+     POP-UP (MODAL) QRIS
+     ========================================== -->
+<div class="modal-overlay" id="qrisModal">
+    <div class="modal-content">
+        <h2>Scan QRIS</h2>
+        <p>Silakan scan menggunakan aplikasi M-Banking atau E-Wallet Anda</p>
+        
+        <!-- FOTO QRIS ANDA SUDAH DIMASUKKAN DI SINI -->
+        <img src="https://static.iimg.live/uploads/incredible-picture-7616.jpeg" alt="QRIS Captain Dezca Famz" id="qrisImage">
+        
+        <p style="font-size: 16px; font-weight: 800; color: #0f9b0f; margin-bottom: 15px;">
+            Total: Rp <span id="modalTotalQris">0</span>
+        </p>
+
+        <button class="btn-close-modal" onclick="tutupModalQris()">Tutup</button>
+        <!-- Tombol unduh agar pelanggan bisa simpan ke galeri -->
+        <a href="https://static.iimg.live/uploads/incredible-picture-7616.jpeg" class="btn-download-qr" id="btnDownloadQr" target="_blank" download="QRIS_CaptainDezca.jpeg">⬇️ Simpan Gambar QRIS</a>
+    </div>
+</div>
+
 <!-- TAMPILAN STRUK UNTUK PRINT -->
 <div id="strukPrint" class="struk-print">
     <h2>CAPTAIN DEZCA FAMZ EV RENT</h2>
@@ -326,30 +436,19 @@
     // Konfigurasi Tarif
     const TARIF_PER_KM = 4200;
 
-    // ==========================================
-    // GANTI LINK DI BAWAH INI DENGAN LINK QRIS ANDA
-    // ==========================================
-    const LINK_QRIS = "https://static.iimg.live/uploads/incredible-picture-7616.jpeg"; 
-
     function hitungArgo() {
         const jarak = parseFloat(document.getElementById('jarakInput').value) || 0;
         const tol = parseFloat(document.getElementById('tolInput').value) || 0;
         const parkir = parseFloat(document.getElementById('parkirInput').value) || 0;
 
-        // Hitung biaya argo murni
         const biayaArgo = jarak * TARIF_PER_KM;
-        
-        // Hitung total keseluruhan
         const total = biayaArgo + tol + parkir;
 
-        // Format ke Rupiah
         const argoFormat = Math.round(biayaArgo).toLocaleString('id-ID');
         const totalFormat = Math.round(total).toLocaleString('id-ID');
         
-        // Update tampilan total
         document.getElementById('totalArgo').textContent = totalFormat;
         
-        // Update rincian teks di dalam kotak argo
         const rincianEl = document.getElementById('rincianText');
         rincianEl.innerHTML = `
             Argo: Rp ${argoFormat}<br>
@@ -379,7 +478,7 @@
         }
     }
 
-    // Fungsi Pembayaran QRIS
+    // Fungsi Pembayaran QRIS (Memunculkan Modal)
     function bayarQris() {
         const total = document.getElementById('totalArgo').textContent;
         if (total === "0") {
@@ -387,11 +486,16 @@
             return;
         }
 
-        // Membuka link QRIS di tab baru
-        window.open(LINK_QRIS, '_blank');
-        
-        // Opsional: Reset form setelah buka QRIS jika diinginkan
-        // resetForm(); 
+        // Set total ke dalam modal
+        document.getElementById('modalTotalQris').textContent = total;
+
+        // Tampilkan modal
+        document.getElementById('qrisModal').classList.add('active');
+    }
+
+    // Fungsi Menutup Modal QRIS
+    function tutupModalQris() {
+        document.getElementById('qrisModal').classList.remove('active');
     }
 
     function cetakNota() {
@@ -407,7 +511,6 @@
         const biayaArgo = jarak * TARIF_PER_KM;
         const total = biayaArgo + tol + parkir;
         
-        // Isi data ke dalam template struk
         const now = new Date();
         const tgl = now.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
         const jam = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
@@ -419,7 +522,6 @@
         document.getElementById('printParkir').textContent = 'Rp ' + Math.round(parkir).toLocaleString('id-ID');
         document.getElementById('printTotal').textContent = 'Rp ' + Math.round(total).toLocaleString('id-ID');
 
-        // Panggil fungsi print browser
         window.print();
     }
 </script>
